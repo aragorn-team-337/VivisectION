@@ -44,3 +44,8 @@ include-package-data = true
 [tool.setuptools.packages.find]
 include = ['vivisection']
 
+[tool.pytest.ini_options]
+testpaths = ['tests']
+python_files = ['test_*.py']
+python_functions = ['test_*']
+
