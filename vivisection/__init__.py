@@ -21,7 +21,7 @@ class VivisectION:
             self.setVw(vw)
             self.resetEmu()
 
-    def setEmuOpts(self, start=None, verbose=False, fakePEB=False, hookfunctionsbyname=False, **kwargs):
+    def setEmuOpts(self, start=None, verbose=False, fakePEB=False, hookfuncsbyname=False, **kwargs):
         kwargs['start'] = start
         kwargs['verbose'] = verbose
         kwargs['fakePEB'] = fakePEB
