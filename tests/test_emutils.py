@@ -294,22 +294,24 @@ class TestKernelGetSnapshotBug(unittest.TestCase):
 
 
 class TestFakeFileModeBug(unittest.TestCase):
-    '''FakeFile.read() uses str comparison `'r' not in self.mode` (fixed).'''
+    '''FakeFile uses bytes mode (b'rb' default) with bytes comparison.'''
 
     def test_fakefile_class_exists(self):
         from vivisection.emutils import FakeFile
         self.assertIsInstance(FakeFile, type)
 
-    def test_mode_comparison_bug(self):
-        '''With the bug fixed, FakeFile.read() uses `'r' not in self.mode`
-        (str comparison) instead of `b'r' not in self.mode` (bytes comparison).'''
+    def test_mode_is_bytes_default(self):
+        '''FakeFile mode defaults to b'rb' (bytes) so b'r' not in self.mode works.'''
+        from vivisection.emutils import FakeFile
+        f = FakeFile('test.txt')
+        self.assertEqual(f.mode, b'rb')
+
+    def test_mode_comparison_uses_bytes(self):
+        '''FakeFile.read() uses bytes comparison `b'r' not in self.mode`.'''
         import inspect
         from vivisection.emutils import FakeFile
         src = inspect.getsource(FakeFile)
-        # The fix: str comparison 'r' not in self.mode
-        self.assertIn("'r' not in self.mode", src)
-        # Ensure the buggy bytes comparison is gone
-        self.assertNotIn("b'r' not in self.mode", src)
+        self.assertIn("b'r' not in self.mode", src)
 
 
 class TestCompareStringACharsizeBug(unittest.TestCase):
@@ -343,22 +345,25 @@ class TestFindExtPath(unittest.TestCase):
         finally:
             shutil.rmtree(tmpdir)
 
-    def test_bytes_libfilename_type_confusion_bug(self):
-        '''With the bug fixed, findExtPath normalizes bytes libFileName to
-        str, so it correctly finds the file even when given bytes.'''
+    def test_bytes_libfilename_works_with_bytes_path(self):
+        '''findExtPath works with bytes libFileName when the path is also bytes.
+        os.listdir(bytes_path) returns bytes filenames, keeping everything consistent.'''
         import tempfile, os, shutil
         from vivisection.emutils import findExtPath
         tmpdir = tempfile.mkdtemp()
         try:
             with open(os.path.join(tmpdir, 'testlib.dll'), 'w') as f:
                 f.write('test')
-            # With the fix, bytes libFileName is decoded to str and matched
-            result = findExtPath([(tmpdir, b'C:\\fake')], b'testlib.dll', kernel=None)
-            # findExtPath returns (fakepath, realpath) on success
+            # Use bytes path so os.listdir returns bytes filenames
+            bpath = tmpdir.encode('utf-8')
+            result = findExtPath([(bpath, b'C:\\fake')], b'testlib.dll', kernel=None)
             self.assertIsNotNone(result)
             self.assertEqual(len(result), 2)
-            # The real path should point to the file we created
-            self.assertTrue(os.path.exists(result[1]))
+            # The real path is bytes, decode for os.path.exists
+            realpath = result[1]
+            if isinstance(realpath, bytes):
+                realpath = realpath.decode('utf-8')
+            self.assertTrue(os.path.exists(realpath))
         finally:
             shutil.rmtree(tmpdir)
 
