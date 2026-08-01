@@ -198,7 +198,7 @@ def compare(data1, data2):
    
     if len(data1) > len(data2):
         out1.append(data1[x:].hex())
-    elif len(data1) > len(data2):
+    elif len(data2) > len(data1):
         out2.append(data2[x:].hex())
     
     if not lastres:
@@ -762,9 +762,9 @@ def strcat(emu, op=None):
     start, second = cconv.getCallArgs(emu, 2)
     initial = readString(emu, start)
     data = readString(emu, second)
-    emu.writeMemory(start + len(initial) + b'\0', data)
+    emu.writeMemory(start + len(initial) + 1, data)
     logger.info("strcat(0x%x, 0x%x)  => %r + %r" % (start, second, initial, data))
-    cconv.execCallReturn(emu, dest, 0)
+    cconv.execCallReturn(emu, start, 0)
     return initial+data
 
 def strncat(emu, op=None):
@@ -775,7 +775,7 @@ def strncat(emu, op=None):
     
     emu.writeMemory(start + len(initial), data)
     logger.info("strncat(0x%x, 0x%x, 0x%x)  => %r + %r" % (start, second, max2, initial, data))
-    cconv.execCallReturn(emu, dest, 0)
+    cconv.execCallReturn(emu, start, 0)
     return initial+data
 
 def strncat_s(emu, op=None):
@@ -1664,7 +1664,7 @@ def CompareStringA(emu, op=None):
     ccname, cconv = getMSCallConv(emu, op.va)
     Locale, dwCmpFlags, lpString1, cchCount1, lpString2, cchCount2 = cconv.getCallArgs(emu, 6)
     result = doWin32StringCompare(emu, op, Locale, dwCmpFlags, lpString1, cchCount1, \
-            lpString2, cchCount2, 0,0,0, charsize=2)
+            lpString2, cchCount2, 0,0,0, charsize=1)
 
     cconv.execCallReturn(emu, result, 6)
 
@@ -2307,8 +2307,8 @@ class FakeFile:
         return self.data[self.off:]
 
     def read(self, length=None):
-        if b'r' not in self.mode and\
-                b'+' not in self.mode:
+        if 'r' not in self.mode and\
+                '+' not in self.mode:
             raise io.UnsupportedOperation("Writing to a file opened for read")
 
         if self.closed:
@@ -2336,9 +2336,9 @@ class FakeFile:
         return self.off
 
     def write(self, data=b''):
-        if b'w' not in self.mode and\
-                b'a' not in self.mode and\
-                b'+' not in self.mode:
+        if 'w' not in self.mode and\
+                'a' not in self.mode and\
+                '+' not in self.mode:
             raise io.UnsupportedOperation("Writing to a file opened for read")
 
         if self.closed:
@@ -2411,20 +2411,32 @@ def findExtPath(pathmaps, libFileName, casein=False, kernel=None, matchFnOnly=Tr
         Real path is helpful for actually opening the file
 
     '''
-    ossep = os.sep.encode('utf-8')
+    ossep = os.sep
 
     if kernel is not None:
         sep = kernel.sep
-
+        if isinstance(sep, bytes):
+            sep = sep.decode('utf-8')
     else:
         logger.warning("running without a kernel?")
         sep = ossep
+
+    # normalize libFileName to str since os.listdir returns str
+    if isinstance(libFileName, bytes):
+        libFileName = libFileName.decode('utf-8')
+
+    # normalize fakepart in pathmaps to str as well
+    norm_pathmaps = []
+    for pathpart, fakepart in pathmaps:
+        if isinstance(fakepart, bytes):
+            fakepart = fakepart.decode('utf-8')
+        norm_pathmaps.append((pathpart, fakepart))
 
     ulibFileName = libFileName.upper()
     logger.debug("findExtPath   casein=%r" % casein)
     logger.debug('sep=%r    libFileName=%r    ulibFileName=%r' % (sep, libFileName, ulibFileName))
 
-    for pathpart, fakepart in pathmaps:
+    for pathpart, fakepart in norm_pathmaps:
         logger.debug("pathmaps:  pathpart: %r   fakepart: %r" % (pathpart, fakepart))
         for fname in os.listdir(pathpart):
             if matchFnOnly:
@@ -2461,22 +2473,23 @@ def doWin32StringCompare(emu, op, \
     idx = 0
     result = 0
     while True:
+        val1 = emu.readMemory(lpString1 + idx, charsize)
+        val2 = emu.readMemory(lpString2 + idx, charsize)
+
         if (cchCount1 != -1 and idx > cchCount1):
             if cchCount1 == cchCount2:
                 return CSTR_EQUAL
             if cchCount2 == -1 and val2[0] == 0:
                 return CSTR_EQUAL
-            return CSTR_GREATER # ? if str1 is done and str2 isn't?
+            return CSTR_GREATER_THAN  # if str1 is done and str2 isn't?
 
         if (cchCount2 != -1 and idx > cchCount2):
             if cchCount1 == cchCount2:
                 return CSTR_EQUAL
             if cchCount1 == -1 and val1[0] == 0:
                 return CSTR_EQUAL
-            return CSTR_LESS_THAN   # ? if str2 is done and str1 isn't?
+            return CSTR_LESS_THAN   # if str2 is done and str1 isn't?
 
-        val1 = emu.readMemory(lpString1 + idx, charsize)
-        val2 = emu.readMemory(lpString2 + idx, charsize)
         # do any conversions necessary (skipping for now, i'm feeling lucky)
 
         # do comparison.  this version is cheating:
@@ -2733,7 +2746,7 @@ def GetUserNameA(emu, op=None):
 
     lpBuffer, pcbBuffer = cconv.getCallArgs(emu, 2)
     bufsize = emu.readMemoryPtr(pcbBuffer)
-    emu.writeMemory(lpBuffer, "DummUser"[:bufsize])
+    emu.writeMemory(lpBuffer, "DummyUser"[:bufsize])
 
     cconv.execCallReturn(emu, 1, 2)
 
@@ -2815,7 +2828,7 @@ FILE_ATTRIB_DEFAULT = win32const.FILE_ATTRIBUTE_ARCHIVE | win32const.FILE_ATTRIB
 
 
 REG_HIVE_HKCR = 0x80000000
-REG_HIVE_HKCU = 0x80000000
+REG_HIVE_HKCU = 0x80000001
 REG_HIVE_HKLM = 0x80000002
 REG_HIVE_HKU  = 0x80000003
 REG_HIVE_HKCC = 0x80000005
@@ -2998,9 +3011,9 @@ class Win32Registry(e_config.EnviConfig):
             # need to convert to bytes() for use in the emulator
             if rtype == REG_SZ:
                 rval = rval.encode('latin1') + '\0'
-            elif type == REG_MULTI_SZ:
+            elif rtype == REG_MULTI_SZ:
                 rval = rval.encode('utf-16') + '\0\0'
-            elif type in (REG_DWORD, REG_QWORD):
+            elif rtype in (REG_DWORD, REG_QWORD):
                 rval = int(rval, 0)
 
         elif type(rval) == bytes:
@@ -3095,9 +3108,9 @@ class Kernel(dict):
         snap.pop('emu')
         snap['_FDS'] = [fd.name for fd in snap.pop('fds')]  # FIXME: this needs to be figured out: filepaths and offsets stored and restored
         snap.pop('_syscall_handlers')   # FIXME: this won't store either.
-        snap.pop('win32k')
-        snap.pop('ntdll')
-        snap.pop('ntoskrnl')
+        snap.pop('win32k', None)
+        snap.pop('ntdll', None)
+        snap.pop('ntoskrnl', None)
         #snap.pop('_FDS')
         return snap
 
@@ -3258,7 +3271,7 @@ class Kernel(dict):
             mode = 'b' + mode
 
         pathmaps = self.pathmaps
-        logger.info("Attempting to open external file: %r")
+        logger.info("Attempting to open external file: %r" % libFilePath)
         fakepath, realpath = findExtPath(pathmaps, libFilePath, not self.isFsCaseSensitive(), kernel=self, matchFnOnly=False)
         realfile = open(realpath, mode)
         retval = self.registerFd(realfile)

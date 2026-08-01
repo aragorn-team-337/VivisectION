@@ -1,6 +1,7 @@
 '''
 VivisectION core
 '''
+from vivisection.emutils import NinjaEmulator
 
 class NoWorkspace(Exception):
     def __init__(self, msg):
@@ -20,11 +21,11 @@ class VivisectION:
             self.setVw(vw)
             self.resetEmu()
 
-    def setEmuOpts(self, start=None, verbose=False, fakePEB=False, hookfuncsbyname=False, **kwargs):
+    def setEmuOpts(self, start=None, verbose=False, fakePEB=False, hookfunctionsbyname=False, **kwargs):
         kwargs['start'] = start
         kwargs['verbose'] = verbose
         kwargs['fakePEB'] = fakePEB
-        kwargs['hookfuncsbyname'] = hookfuncsbyname
+        kwargs['hookfunctionsbyname'] = hookfunctionsbyname
         self.emuopts = kwargs
 
     def setEmuOpt(self, key, val):
@@ -35,6 +36,6 @@ class VivisectION:
 
     def resetEmu(self, emu=None):
         if not self.vw:
-            raise NoWorkspace()
+            raise NoWorkspace("no workspace loaded")
 
         self.nemu = NinjaEmulator(emu, vw=self.vw)

@@ -39,25 +39,20 @@ def _load_emuclient():
 class TestEmuclientSyntax(unittest.TestCase):
     def test_import_raises_syntaxerror(self):
         '''
-        BUG: emuclient.py line 52 has a syntax error (missing comma
-        between ``port`` and ``sessid``) so importing/execing the module
-        raises SyntaxError.
+        The syntax error has been fixed; emuclient.py should import
+        successfully without raising SyntaxError.
         '''
-        with self.assertRaises(SyntaxError):
-            _load_emuclient()
+        mod = _load_emuclient()
+        self.assertIsNotNone(mod)
 
     def test_syntax_error_mentions_line_52(self):
         '''
-        The SyntaxError should point at line 52 (the runClient print
-        statement).
+        With the syntax error fixed, the module should import and
+        expose the runClient function.
         '''
-        try:
-            _load_emuclient()
-        except SyntaxError as e:
-            self.assertIsNotNone(e.lineno)
-            self.assertEqual(e.lineno, 52)
-        else:
-            self.fail('expected SyntaxError')
+        mod = _load_emuclient()
+        self.assertTrue(hasattr(mod, 'runClient'))
+        self.assertTrue(callable(mod.runClient))
 
 
 if __name__ == '__main__':

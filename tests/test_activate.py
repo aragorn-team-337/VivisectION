@@ -149,16 +149,25 @@ class TestDoDeactivation(unittest.TestCase):
 
 
 class TestDoActivationBug(unittest.TestCase):
-    '''BUG: doActivation checks `len(args) > 1` instead of `len(args) > 0`.
-    Passing a single path argument is ignored.'''
+    '''doActivation with a single path argument should use it (bug fixed).'''
 
     def test_single_arg_ignored_bug(self):
-        import inspect
-        from vivisection.scripts.vivisection_activate import doActivation
-        src = inspect.getsource(doActivation)
-        # The bug: should be > 0, not > 1
-        self.assertIn('len(args) > 1', src)
+        '''With the bug fixed, doActivation with a single path argument
+        DOES use it and creates the VivisectION symlink.'''
+        tmpdir = tempfile.mkdtemp()
+        try:
+            plugin_dir = os.path.join(tmpdir, 'plugins')
+            os.makedirs(plugin_dir)
 
+            from vivisection.scripts.vivisection_activate import doActivation
+
+            # Pass one path argument -- now that the bug is fixed (len(args) > 0),
+            # it should use it and create the symlink.
+            with patch.dict(os.environ, {}, clear=True):
+                doActivation([plugin_dir])
+                self.assertTrue(os.path.islink(os.path.join(plugin_dir, 'VivisectION')))
+        finally:
+            shutil.rmtree(tmpdir)
 
 if __name__ == '__main__':
     unittest.main()

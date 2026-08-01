@@ -71,16 +71,17 @@ class TestIsGoodTarget(unittest.TestCase):
 class TestFindStrings(unittest.TestCase):
     def test_empty_memranges_skips_all_maps(self):
         '''
-        BUG #9: findStrings with empty memranges returns empty because
-        every map is skipped (skip starts True and is never cleared).
+        With BUG #9 fixed, findStrings with empty memranges searches ALL
+        maps (skip is cleared when memranges is falsy) and finds strings.
         '''
         vw = make_mock_vw_with_maps([
             (0x1000, 0x100, 0x7, 'map1'),
         ])
         vw.readMemString.return_value = b'hello world'
         strs, unis = findStrings(vw, minlen=5, memranges=())
-        self.assertEqual(strs, [])
-        self.assertEqual(unis, [])
+        # With the fix, empty memranges means search all maps, so the
+        # string should be found.
+        self.assertIn(0x1000, strs)
 
     def test_memranges_covering_maps_finds_strings(self):
         '''
@@ -99,15 +100,18 @@ class TestFindStrings(unittest.TestCase):
 class TestFindPointers(unittest.TestCase):
     def test_empty_memranges_skips_all_maps(self):
         '''
-        BUG #9: findPointers with empty memranges returns empty because
-        every map is skipped.
+        With BUG #9 fixed, findPointers with empty memranges searches ALL
+        maps (skip is cleared when memranges is falsy) and finds pointers.
         '''
         vw = make_mock_vw_with_maps([
             (0x1000, 0x100, 0x7, 'map1'),
         ])
         vw.readMemoryPtr.return_value = 0x1000
         ptrs = findPointers(vw, memranges=())
-        self.assertEqual(ptrs, [])
+        # With the fix, empty memranges means search all maps, so
+        # pointers should be found (the mock readMemoryPtr returns 0x1000
+        # which is a valid pointer in the same map).
+        self.assertGreater(len(ptrs), 0)
 
     def test_memranges_same_map_name_aligned_true(self):
         '''

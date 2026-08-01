@@ -224,7 +224,7 @@ class FuncReconWidget(e_q_memory.EnviNavMixin, vq_save.SaveableWidget, QWidget):
         self.taintlist.load(taints)
 
 
-if globals().get('vw') and globals.get('args'):
+if globals().get('vw') and globals().get('args'):
     fva = vw.parseExpression(args[-1])
     ionRecon(vw, vwgui, fva)
 

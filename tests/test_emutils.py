@@ -173,9 +173,10 @@ class TestConstants(unittest.TestCase):
         self.assertEqual(CSTR_GREATER_THAN, 3)
 
     def test_reg_hive_hkcu_bug(self):
-        '''BUG: REG_HIVE_HKCU = 0x80000000, same as HKCR. Should be 0x80000001.'''
-        # Document the bug: HKCU should not equal HKCR (0x80000000)
-        self.assertEqual(REG_HIVE_HKCU, 0x80000000)
+        '''With the bug fixed, REG_HIVE_HKCU = 0x80000001 (distinct from HKCR).'''
+        self.assertEqual(REG_HIVE_HKCU, 0x80000001)
+        # HKCU should not equal HKCR (0x80000000)
+        self.assertNotEqual(REG_HIVE_HKCU, 0x80000000)
 
     def test_byteprintables(self):
         self.assertIsInstance(byteprintables, bytes)
@@ -273,52 +274,55 @@ class TestWin32Registry(unittest.TestCase):
 
 
 class TestKernelGetSnapshotBug(unittest.TestCase):
-    '''BUG: Kernel.getSnapshot() pops win32k/ntdll/ntoskrnl that don't exist
-    on base Kernel or LinuxKernel -> KeyError.'''
+    '''Kernel.getSnapshot() safely pops win32k/ntdll/ntoskrnl with defaults.'''
 
     def test_kernel_class_exists(self):
         from vivisection.emutils import Kernel
         self.assertIsInstance(Kernel, type)
 
     def test_get_snapshot_keyerror_bug(self):
-        '''getSnapshot on base Kernel should raise KeyError for win32k/ntdll/ntoskrnl.'''
+        '''With the bug fixed, getSnapshot uses .pop(key, None) with a
+        default, so it does not raise KeyError even when the keys are absent.'''
         from vivisection.emutils import Kernel
-        # Creating a Kernel requires a lot of setup; just verify the bug
-        # by checking the source has .pop() without defaults
+        # Verify the fix by checking the source uses .pop() with defaults
         import inspect
         src = inspect.getsource(Kernel.getSnapshot)
-        # The bug: .pop('win32k') without a default
-        self.assertIn(".pop('win32k')", src)
-        self.assertIn(".pop('ntdll')", src)
-        self.assertIn(".pop('ntoskrnl')", src)
+        # The fix: .pop('win32k', None) with a default
+        self.assertIn(".pop('win32k', None)", src)
+        self.assertIn(".pop('ntdll', None)", src)
+        self.assertIn(".pop('ntoskrnl', None)", src)
 
 
 class TestFakeFileModeBug(unittest.TestCase):
-    '''BUG: FakeFile.read() uses `b'r' not in self.mode` where mode is str -> TypeError.'''
+    '''FakeFile.read() uses str comparison `'r' not in self.mode` (fixed).'''
 
     def test_fakefile_class_exists(self):
         from vivisection.emutils import FakeFile
         self.assertIsInstance(FakeFile, type)
 
     def test_mode_comparison_bug(self):
-        '''Verify the bug exists by checking source code.'''
+        '''With the bug fixed, FakeFile.read() uses `'r' not in self.mode`
+        (str comparison) instead of `b'r' not in self.mode` (bytes comparison).'''
         import inspect
         from vivisection.emutils import FakeFile
         src = inspect.getsource(FakeFile)
-        # The bug: comparing bytes b'r' with string mode
-        self.assertIn("b'r' not in self.mode", src)
+        # The fix: str comparison 'r' not in self.mode
+        self.assertIn("'r' not in self.mode", src)
+        # Ensure the buggy bytes comparison is gone
+        self.assertNotIn("b'r' not in self.mode", src)
 
 
 class TestCompareStringACharsizeBug(unittest.TestCase):
-    '''BUG: CompareStringA uses charsize=2 (wide), should be 1 (ANSI).'''
+    '''CompareStringA uses charsize=1 (ANSI) - bug fixed.'''
 
     def test_comparestringa_charsize_bug(self):
         import inspect
         from vivisection.emutils import CompareStringA
         src = inspect.getsource(CompareStringA)
-        # Should be charsize=1 for ANSI, but is 2
-        # Look for the call to doWin32StringCompare
-        self.assertIn('charsize=2', src)
+        # With the fix, CompareStringA uses charsize=1 for ANSI strings
+        self.assertIn('charsize=1', src)
+        # Ensure the buggy charsize=2 is gone
+        self.assertNotIn('charsize=2', src)
 
 
 class TestFindExtPath(unittest.TestCase):
@@ -340,16 +344,21 @@ class TestFindExtPath(unittest.TestCase):
             shutil.rmtree(tmpdir)
 
     def test_bytes_libfilename_type_confusion_bug(self):
-        '''BUG: bytes libFileName compared with str os.listdir result -> never matches.'''
+        '''With the bug fixed, findExtPath normalizes bytes libFileName to
+        str, so it correctly finds the file even when given bytes.'''
         import tempfile, os, shutil
         from vivisection.emutils import findExtPath
         tmpdir = tempfile.mkdtemp()
         try:
             with open(os.path.join(tmpdir, 'testlib.dll'), 'w') as f:
                 f.write('test')
-            # bytes libFileName never matches str fname from os.listdir
-            with self.assertRaises(FileNotFoundError):
-                findExtPath([(tmpdir, b'C:\\fake')], b'testlib.dll', kernel=None)
+            # With the fix, bytes libFileName is decoded to str and matched
+            result = findExtPath([(tmpdir, b'C:\\fake')], b'testlib.dll', kernel=None)
+            # findExtPath returns (fakepath, realpath) on success
+            self.assertIsNotNone(result)
+            self.assertEqual(len(result), 2)
+            # The real path should point to the file we created
+            self.assertTrue(os.path.exists(result[1]))
         finally:
             shutil.rmtree(tmpdir)
 

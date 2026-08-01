@@ -2,6 +2,7 @@ import envi
 import time
 import logging
 import vivisect
+import vivisect.const as v_const
 import collections
 import envi.exc as e_exc
 import vivisect.exc as v_exc
@@ -48,30 +49,29 @@ class DaybreakMonitor(viv_monitor.AnalysisMonitor):
                 #return False
 
                 if self.vw.isValidPointer(val) and self.vw.isProbablyString(val):
-                    self.addString(op.va)
+                    self.addString(op.va, val)
                     return True
                     out[val] = True
 
                 if self.vw.isValidPointer(val) and self.vw.isProbablyUnicode(val):
-                    item = (op.va, val, self.vw.readMemory(val, 30))
-                    self.addUnicode(item)
+                    self.addUnicode(op.va, val)
                     return True
                     out[val] = True
                 out[val] = False
                 continue
 
             lva, lsz, ltype, ltinfo = loc
-            if ltype == vivisect.LOC_IMPORT:
+            if ltype == v_const.LOC_IMPORT:
                 item = (op.va, val, ltinfo)
                 out[val] = self.addImport(item)
                 continue
 
-            if ltype == vivisect.LOC_STRING:
+            if ltype == v_const.LOC_STRING:
                 self.addString(op.va, val)
                 out[val] = True
                 continue
 
-            elif ltype == vivisect.LOC_UNI:
+            elif ltype == v_const.LOC_UNI:
                 self.addUnicode(op.va, val)
                 out[val] = True
                 continue
@@ -82,7 +82,7 @@ class DaybreakMonitor(viv_monitor.AnalysisMonitor):
         return out
 
     def addImport(self, item):
-        print("Adding Import: %r" % item)
+        print("Adding Import: %r" % (item,))
         va = item[0]
         if item not in self.imports:
             self.imports.append(item)

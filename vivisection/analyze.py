@@ -39,6 +39,10 @@ def findStrings(vw, minlen=5, memranges=(), unistrs=False):
                     if rstopva < stopva:
                         stopva = rstopva
 
+        else:
+            # no memranges specified means search all maps
+            skip = False
+
         if skip:
             continue
 
@@ -146,9 +150,12 @@ def findPointers(vw, memranges=(), lclfile=False, aligned=True, anongroup=True):
                     if rstopva < stopva:
                         stopva = rstopva
 
+        else:
+            # no memranges specified means search all maps
+            skip = False
+
         if skip:
             continue
-
         # Now we get to work
         logger.warning("findPointers: %x->%x", startva, stopva)
         tva = startva

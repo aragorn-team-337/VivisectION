@@ -10,7 +10,7 @@ def doActivation(args=[]):
     Activation
     If you provide 
     '''
-    if len(args) > 1:
+    if len(args) > 0:
         gopath = args[-1]
 
     else:

@@ -49,13 +49,20 @@ class TestVivisectION(unittest.TestCase):
 
     def test_with_vw_raises_nameerror(self):
         '''
-        BUG #2: VivisectION(vw) raises NameError because NinjaEmulator is
-        referenced in resetEmu() but never imported into the module.
+        With BUG #2 fixed, NinjaEmulator is imported, so VivisectION(vw)
+        no longer raises NameError.  (It may raise other errors due to the
+        mock vw, but NameError should not occur.)
         '''
         from unittest.mock import MagicMock
         vw = MagicMock()
-        with self.assertRaises(NameError):
+        try:
             VivisectION(vw)
+        except NameError:
+            self.fail('NameError should not be raised now that NinjaEmulator is imported')
+        except Exception:
+            # Other exceptions are acceptable since vw is a mock and
+            # NinjaEmulator may require a real workspace.
+            pass
 
     def test_setemuopts_stores_all_opts(self):
         '''setEmuOpts should store all the opts in emuopts.'''
@@ -85,11 +92,11 @@ class TestVivisectION(unittest.TestCase):
 
     def test_resetemu_without_vw_raises_typeerror(self):
         '''
-        BUG #1/#3: resetEmu without a vw raises TypeError because it calls
-        ``NoWorkspace()`` without a msg argument.
+        With BUG #1/#3 fixed, resetEmu without a vw raises NoWorkspace
+        (with a msg argument) instead of TypeError.
         '''
         vion = VivisectION()
-        with self.assertRaises(TypeError):
+        with self.assertRaises(NoWorkspace):
             vion.resetEmu()
 
 

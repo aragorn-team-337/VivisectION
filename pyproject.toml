@@ -23,6 +23,7 @@ dependencies = [
     'vivisect>=1.0.8',
     'requests',
     'ipython',
+    'psutil',
 ]
 
 [project.urls]

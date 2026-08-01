@@ -15,7 +15,7 @@ addString / addUnicode helpers, including several documented bugs:
   raises ``AttributeError``.
 '''
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import vivisect
 import vivisection.emulation as ion_emulation  # noqa: F401
@@ -65,10 +65,9 @@ class TestCheckIfInteresting(unittest.TestCase):
 
     def test_valid_pointer_to_string_calls_addstring_buggy(self):
         '''
-        BUG #4: when val is a valid pointer to a probable string and there
-        is no Location, checkIfInteresting calls ``self.addString(op.va)``
-        with only ONE argument.  addString requires ``(va, val)`` so this
-        raises TypeError.
+        With BUG #4 fixed, checkIfInteresting calls
+        ``self.addString(op.va, val)`` with the correct two arguments,
+        so no TypeError is raised and the string is recorded.
         '''
         m, vw, fva = self._make_monitor()
         op = MagicMock()
@@ -78,9 +77,13 @@ class TestCheckIfInteresting(unittest.TestCase):
         vw.getLocation.return_value = None
         vw.isProbablyString.return_value = True
 
-        # addString(va) is called with the wrong arg count -> TypeError
-        with self.assertRaises(TypeError):
-            m.checkIfInteresting(MagicMock(), op, [0x402000])
+        # addString(op.va, val) is now called with the correct 2 args.
+        # Patch addString so we can verify the call signature.
+        m.addString = MagicMock(return_value=True)
+        result = m.checkIfInteresting(MagicMock(), op, [0x402000])
+        # addString should have been called with exactly 2 args: (op.va, val)
+        m.addString.assert_called_once_with(0x401000, 0x402000)
+        self.assertTrue(result)
 
     def test_loc_import_branch_raises_attributeerror(self):
         '''
@@ -104,19 +107,19 @@ class TestCheckIfInteresting(unittest.TestCase):
 class TestAddImport(unittest.TestCase):
     def test_addimport_tuple_item(self):
         '''
-        BUG #5: addImport does ``print("Adding Import: %r" % item)`` where
-        ``item`` is a 3-tuple.  Because ``%`` with a tuple unpacks it as the
-        format arguments, the single ``%r`` receives too many args and
-        raises ``TypeError: not all arguments converted during string
-        formatting``.
+        With BUG #5 fixed, addImport correctly handles a tuple item by
+        using ``(item,)`` in the format string, so no TypeError is raised
+        and the item is appended to self.imports.
         '''
         vw = MagicMock()
         vw.getFunction.return_value = 0x401000
         m = DaybreakMonitor(vw, 0x401000)
         m.starteip = 0x401000
         item = (0x1000, 0x2000, ('kernel32.dll', 'CreateFileW'))
-        with self.assertRaises(TypeError):
+        with patch('builtins.print'):
             m.addImport(item)
+        # The item should have been added to self.imports
+        self.assertIn(item, m.imports)
 
 
 class TestAddStringBuggy(unittest.TestCase):
