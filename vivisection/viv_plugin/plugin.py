@@ -20,6 +20,7 @@ import envi.config as e_config
 import envi.threads as e_thread
 
 import vivisect
+import vivisect.const as v_const
 
 try:
     import vivisection.recon as ionRecon
@@ -86,18 +87,18 @@ def renameFullString(vw, va, maxsz=200):
         return
 
     lva, lsz, ltype, ltinfo = loc
-    if ltype not in (vivisect.LOC_STRING, vivisect.LOC_UNI):
+    if ltype not in (v_const.LOC_STRING, v_const.LOC_UNI):
         vprint(vw, "renameFullString(0x%x) -> Location *isn't* String or Unicode" % va)
         return
 
     curnm = vw.getName(va)
-    string = vw.readMemString(va, maxsz, bool(ltype==vivisect.LOC_UNI))
+    string = vw.readMemString(va, maxsz, bool(ltype==v_const.LOC_UNI))
     if curnm is None or not string:
         vprint(vw, "renameFullString(0x%x) -> No string/name found" % va)
         return
 
     string = string.decode('utf8')
-    if ltype == vivisect.LOC_STRING:
+    if ltype == v_const.LOC_STRING:
         newnm = "str_%s_%.8x" % (string, va)
     else:
         newnm = "wstr_%s_%.8x" % (string, va)

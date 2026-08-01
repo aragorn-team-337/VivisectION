@@ -2,6 +2,7 @@
 this is the external client called to setup an emulator
 '''
 import sys
+import threading
 import cobra
 import vivisect.cli as v_cli
 import vivisect.remote.server as v_server
@@ -22,37 +23,37 @@ def initWorkspaceClient(vw, remotevw):
     workspace object.
     """
     uname = "ion-client"
-    self.server = remotevw
-    self.rchan = remotevw.createEventChannel()
+    vw.server = remotevw
+    vw.rchan = remotevw.createEventChannel()
 
-    self.server.vprint('%s connecting...' % uname)
+    vw.server.vprint('%s connecting...' % uname)
 
-    print("server: %r" % self.server)
-    if isinstance(self.server, v_server.VivServerClient):
-        self.leaders.update(self.server.getLeaderSessions())
-        self.leaderloc.update(self.server.getLeaderLocations())
+    print("server: %r" % vw.server)
+    if isinstance(vw.server, v_server.VivServerClient):
+        vw.leaders.update(vw.server.getLeaderSessions())
+        vw.leaderloc.update(vw.server.getLeaderLocations())
     else:
-        self.leaders.update(self.server.leaders)
-        self.leaderloc.update(self.server.leaderloc)
+        vw.leaders.update(vw.server.leaders)
+        vw.leaderloc.update(vw.server.leaderloc)
 
 
-    wsevents = self.server.exportWorkspace()
-    self.importWorkspace(wsevents)
-    self.server.vprint('%s connection complete!' % uname)
+    wsevents = vw.server.exportWorkspace()
+    vw.importWorkspace(wsevents)
+    vw.server.vprint('%s connection complete!' % uname)
 
-    thr = threading.Thread(target=self._clientThread)
+    thr = threading.Thread(target=vw._clientThread)
     thr.setDaemon(True)
     thr.start()
 
-    timeout = self.config.viv.remote.wait_for_plat_arch
-    self._load_event.wait(timeout=timeout)
-    self._snapInAnalysisModules()
+    timeout = vw.config.viv.remote.wait_for_plat_arch
+    vw._load_event.wait(timeout=timeout)
+    vw._snapInAnalysisModules()
 
 def runClient(host, port, sessid):
-    print("runClient(%r, %r, %r)" % (host, port sessid))
+    print("runClient(%r, %r, %r)" % (host, port, sessid))
 
     # connect to remote workspace
-    vw = getRemoteWs()
+    vw = getRemoteWs('%s:%s' % (host, port))
 
     # get session context
     ctx = vw._ionmgr.getSession(sessid)

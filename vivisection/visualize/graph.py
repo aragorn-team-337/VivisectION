@@ -32,7 +32,7 @@ from vqt.common import *
 from vivisect.const import *
 from envi.common import MIRE
 
-class DirecedGraphCanvas(vq_memory.VivCanvasBase):
+class DirectedGraphCanvas(vq_memory.VivCanvasBase):
     paintUp = pyqtSignal()
     paintDown = pyqtSignal()
     paintMerge = pyqtSignal()
@@ -47,9 +47,9 @@ class DirecedGraphCanvas(vq_memory.VivCanvasBase):
 
     # These have changed because QtWebEngine suxxs: https://bugreports.qt.io/browse/QTBUG-43602
     def event(self, evt):
-        if evt.type() == Qt.QEvent.ChildAdded:
+        if evt.type() == QtCore.QEvent.Type.ChildAdded:
             evt.child().installEventFilter(self)
-        elif evt.type() == Qt.QEvent.ChildRemoved:
+        elif evt.type() == QtCore.QEvent.Type.ChildRemoved:
             evt.child().removeEventFilter(self)
         return vq_memory.VivCanvasBase.event(self, evt)
 

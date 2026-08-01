@@ -23,6 +23,7 @@ dependencies = [
     'vivisect>=1.0.8',
     'requests',
     'ipython',
+    'psutil',
 ]
 
 [project.urls]
@@ -43,4 +44,9 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 include = ['vivisection']
+
+[tool.pytest.ini_options]
+testpaths = ['tests']
+python_files = ['test_*.py']
+python_functions = ['test_*']
 
