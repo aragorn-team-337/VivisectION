@@ -2483,6 +2483,8 @@ def doWin32StringCompare(emu, op, \
             if cchCount1 == -1 and val1[0] == 0:
                 return CSTR_EQUAL
             return CSTR_LESS_THAN   # if str2 is done and str1 isn't?
+        val1 = emu.readMemory(lpString1 + idx, charsize)
+        val2 = emu.readMemory(lpString2 + idx, charsize)
 
         # do any conversions necessary (skipping for now, i'm feeling lucky)
 
