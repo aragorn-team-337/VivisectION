@@ -2307,8 +2307,8 @@ class FakeFile:
         return self.data[self.off:]
 
     def read(self, length=None):
-        if 'r' not in self.mode and\
-                '+' not in self.mode:
+        if b'r' not in self.mode and\
+                b'+' not in self.mode:
             raise io.UnsupportedOperation("Writing to a file opened for read")
 
         if self.closed:
