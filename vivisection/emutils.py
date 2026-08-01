@@ -2470,9 +2470,6 @@ def doWin32StringCompare(emu, op, \
     idx = 0
     result = 0
     while True:
-        val1 = emu.readMemory(lpString1 + idx, charsize)
-        val2 = emu.readMemory(lpString2 + idx, charsize)
-
         if (cchCount1 != -1 and idx > cchCount1):
             if cchCount1 == cchCount2:
                 return CSTR_EQUAL
