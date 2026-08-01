@@ -2411,7 +2411,7 @@ def findExtPath(pathmaps, libFileName, casein=False, kernel=None, matchFnOnly=Tr
         Real path is helpful for actually opening the file
 
     '''
-    ossep = os.sep
+    ossep = os.sep.encode('utf-8')
 
     if kernel is not None:
         sep = kernel.sep
