@@ -2336,9 +2336,9 @@ class FakeFile:
         return self.off
 
     def write(self, data=b''):
-        if 'w' not in self.mode and\
-                'a' not in self.mode and\
-                '+' not in self.mode:
+        if b'w' not in self.mode and\
+                b'a' not in self.mode and\
+                b'+' not in self.mode:
             raise io.UnsupportedOperation("Writing to a file opened for read")
 
         if self.closed:
