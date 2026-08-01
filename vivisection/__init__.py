@@ -25,7 +25,7 @@ class VivisectION:
         kwargs['start'] = start
         kwargs['verbose'] = verbose
         kwargs['fakePEB'] = fakePEB
-        kwargs['hookfunctionsbyname'] = hookfunctionsbyname
+        kwargs['hookfuncsbyname'] = hookfuncsbyname
         self.emuopts = kwargs
 
     def setEmuOpt(self, key, val):
