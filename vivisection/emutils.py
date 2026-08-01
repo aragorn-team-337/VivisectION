@@ -2742,7 +2742,7 @@ def GetUserNameA(emu, op=None):
 
     lpBuffer, pcbBuffer = cconv.getCallArgs(emu, 2)
     bufsize = emu.readMemoryPtr(pcbBuffer)
-    emu.writeMemory(lpBuffer, "DummyUser"[:bufsize])
+    emu.writeMemory(lpBuffer, "DummUser"[:bufsize])
 
     cconv.execCallReturn(emu, 1, 2)
 
