@@ -2431,7 +2431,6 @@ def findExtPath(pathmaps, libFileName, casein=False, kernel=None, matchFnOnly=Tr
         if isinstance(fakepart, bytes):
             fakepart = fakepart.decode('utf-8')
         norm_pathmaps.append((pathpart, fakepart))
-
     ulibFileName = libFileName.upper()
     logger.debug("findExtPath   casein=%r" % casein)
     logger.debug('sep=%r    libFileName=%r    ulibFileName=%r' % (sep, libFileName, ulibFileName))
