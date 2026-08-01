@@ -2415,8 +2415,6 @@ def findExtPath(pathmaps, libFileName, casein=False, kernel=None, matchFnOnly=Tr
 
     if kernel is not None:
         sep = kernel.sep
-        if isinstance(sep, bytes):
-            sep = sep.decode('utf-8')
     else:
         logger.warning("running without a kernel?")
         sep = ossep
