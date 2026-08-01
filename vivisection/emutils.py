@@ -762,7 +762,7 @@ def strcat(emu, op=None):
     start, second = cconv.getCallArgs(emu, 2)
     initial = readString(emu, start)
     data = readString(emu, second)
-    emu.writeMemory(start + len(initial) + 1, data)
+    emu.writeMemory(start + len(initial), data)
     logger.info("strcat(0x%x, 0x%x)  => %r + %r" % (start, second, initial, data))
     cconv.execCallReturn(emu, start, 0)
     return initial+data
