@@ -2433,7 +2433,7 @@ def findExtPath(pathmaps, libFileName, casein=False, kernel=None, matchFnOnly=Tr
     logger.debug("findExtPath   casein=%r" % casein)
     logger.debug('sep=%r    libFileName=%r    ulibFileName=%r' % (sep, libFileName, ulibFileName))
 
-    for pathpart, fakepart in norm_pathmaps:
+    for pathpart, fakepart in pathmaps:
         logger.debug("pathmaps:  pathpart: %r   fakepart: %r" % (pathpart, fakepart))
         for fname in os.listdir(pathpart):
             if matchFnOnly:
