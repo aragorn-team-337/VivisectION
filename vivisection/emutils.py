@@ -2283,7 +2283,7 @@ class FakeFile:
     FakeFile allows us to use a File-like object for files only defined in the 
     NinjaEmulator as bytes() objects.  Behaves similar to _io.BufferedReader.
     '''
-    def __init__(self, filename, data=b'', mode='rb', off=0):
+    def __init__(self, filename, data=b'', mode=b'rb', off=0):
         self.filename = filename
         self._filenum = None
         self.closed = False
@@ -2419,16 +2419,6 @@ def findExtPath(pathmaps, libFileName, casein=False, kernel=None, matchFnOnly=Tr
         logger.warning("running without a kernel?")
         sep = ossep
 
-    # normalize libFileName to str since os.listdir returns str
-    if isinstance(libFileName, bytes):
-        libFileName = libFileName.decode('utf-8')
-
-    # normalize fakepart in pathmaps to str as well
-    norm_pathmaps = []
-    for pathpart, fakepart in pathmaps:
-        if isinstance(fakepart, bytes):
-            fakepart = fakepart.decode('utf-8')
-        norm_pathmaps.append((pathpart, fakepart))
     ulibFileName = libFileName.upper()
     logger.debug("findExtPath   casein=%r" % casein)
     logger.debug('sep=%r    libFileName=%r    ulibFileName=%r' % (sep, libFileName, ulibFileName))
@@ -2470,6 +2460,9 @@ def doWin32StringCompare(emu, op, \
     idx = 0
     result = 0
     while True:
+        val1 = emu.readMemory(lpString1 + idx, charsize)
+        val2 = emu.readMemory(lpString2 + idx, charsize)
+
         if (cchCount1 != -1 and idx > cchCount1):
             if cchCount1 == cchCount2:
                 return CSTR_EQUAL
@@ -2483,8 +2476,6 @@ def doWin32StringCompare(emu, op, \
             if cchCount1 == -1 and val1[0] == 0:
                 return CSTR_EQUAL
             return CSTR_LESS_THAN   # if str2 is done and str1 isn't?
-        val1 = emu.readMemory(lpString1 + idx, charsize)
-        val2 = emu.readMemory(lpString2 + idx, charsize)
 
         # do any conversions necessary (skipping for now, i'm feeling lucky)
 
