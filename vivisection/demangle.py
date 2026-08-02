@@ -4,8 +4,8 @@ import requests
 
 # Default demangling endpoint.  The plain-HTTP URL redirects to HTTPS
 # and the redirect drops the POST body, so use the HTTPS URL directly.
-# Override with VIVISION_DEMANGLE_URL for a local mirror or air-gapped env.
-DEMANGLE_URL = os.environ.get('VIVISION_DEMANGLE_URL', 'https://www.demangler.com/raw')
+# Override with VIVISECTION_DEMANGLE_URL for a local mirror or air-gapped env.
+DEMANGLE_URL = os.environ.get('VIVISECTION_DEMANGLE_URL', 'https://www.demangler.com/raw')
 
 
 class DemangleException(Exception):
